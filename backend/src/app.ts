@@ -4,6 +4,7 @@ import { db } from './db/database.js';
 import { paymentsRouter } from './routes/payments.js';
 import { tasksRouter } from './routes/tasks.js';
 import { templatesRouter } from './routes/templates.js';
+import { availabilityRouter } from './routes/availability.js';
 
 export function createApp() {
   const app = express();
@@ -20,9 +21,7 @@ export function createApp() {
   app.use('/api/payments', paymentsRouter);
   app.use('/api/tasks', tasksRouter);
   app.use('/api/templates', templatesRouter);
-
-  // 残りの機能のルーターはここに追加していく
-  // app.use('/api/availability', availabilityRouter);
+  app.use('/api/availability', availabilityRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not Found' });
