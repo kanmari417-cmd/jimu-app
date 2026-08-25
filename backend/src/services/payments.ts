@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { db } from '../db/database.js';
+import { sql } from '../db/postgres.js';
 import type {
   MonthlySummaryRow,
   PaymentInput,
@@ -26,17 +26,17 @@ export interface ListPaymentsFilters {
   month?: string; // YYYY-MM
 }
 
-export function listPayments(filters: ListPaymentsFilters = {}): PaymentWithDerived[] {
+export async function listPayments(filters: ListPaymentsFilters = {}): Promise<PaymentWithDerived[]> {
   const conditions: string[] = [];
-  const params: Record<string, unknown> = {};
+  const params: unknown[] = [];
 
   if (filters.status) {
-    conditions.push('status = @status');
-    params.status = filters.status;
+    params.push(filters.status);
+    conditions.push(`status = $${params.length}`);
   }
   if (filters.month) {
-    conditions.push("strftime('%Y-%m', date) = @month");
-    params.month = filters.month;
+    params.push(`${filters.month}-%`);
+    conditions.push(`date LIKE $${params.length}`);
   }
 
   let query = 'SELECT * FROM payments';
@@ -45,62 +45,70 @@ export function listPayments(filters: ListPaymentsFilters = {}): PaymentWithDeri
   }
   query += ' ORDER BY date DESC, id DESC';
 
-  const rows = db.prepare(query).all(params) as PaymentRecord[];
+  const { rows } = await sql.query<PaymentRecord>(query, params);
   return rows.map(withDerived);
 }
 
-export function getPayment(id: number): PaymentWithDerived | undefined {
-  const row = db.prepare('SELECT * FROM payments WHERE id = ?').get(id) as PaymentRecord | undefined;
+async function fetchRawPayment(id: number): Promise<PaymentRecord | undefined> {
+  const { rows } = await sql.query<PaymentRecord>('SELECT * FROM payments WHERE id = $1', [id]);
+  return rows[0];
+}
+
+export async function getPayment(id: number): Promise<PaymentWithDerived | undefined> {
+  const row = await fetchRawPayment(id);
   return row ? withDerived(row) : undefined;
 }
 
-export function createPayment(input: PaymentInput): PaymentWithDerived {
-  const stmt = db.prepare(`
-    INSERT INTO payments
+export async function createPayment(input: PaymentInput): Promise<PaymentWithDerived> {
+  const { rows } = await sql.query<PaymentRecord>(
+    `INSERT INTO payments
       (date, customer_name, staff_name, contract_amount, confirmed_date, received_amount, status, notes, updated_at)
-    VALUES
-      (@date, @customer_name, @staff_name, @contract_amount, @confirmed_date, @received_amount, @status, @notes, datetime('now'))
-  `);
-  const result = stmt.run({
-    date: input.date,
-    customer_name: input.customer_name,
-    staff_name: input.staff_name,
-    contract_amount: input.contract_amount,
-    confirmed_date: input.confirmed_date ?? null,
-    received_amount: input.received_amount ?? null,
-    status: input.status ?? '未確認',
-    notes: input.notes ?? null,
-  });
-
-  return getPayment(Number(result.lastInsertRowid))!;
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+     RETURNING *`,
+    [
+      input.date,
+      input.customer_name,
+      input.staff_name,
+      input.contract_amount,
+      input.confirmed_date ?? null,
+      input.received_amount ?? null,
+      input.status ?? '未確認',
+      input.notes ?? null,
+    ],
+  );
+  return withDerived(rows[0]);
 }
 
-export function updatePayment(id: number, input: Partial<PaymentInput>): PaymentWithDerived | undefined {
-  const existing = db.prepare('SELECT * FROM payments WHERE id = ?').get(id) as PaymentRecord | undefined;
+export async function updatePayment(id: number, input: Partial<PaymentInput>): Promise<PaymentWithDerived | undefined> {
+  const existing = await fetchRawPayment(id);
   if (!existing) return undefined;
 
   const merged: PaymentRecord = { ...existing, ...input } as PaymentRecord;
 
-  db.prepare(`
-    UPDATE payments SET
-      date = @date,
-      customer_name = @customer_name,
-      staff_name = @staff_name,
-      contract_amount = @contract_amount,
-      confirmed_date = @confirmed_date,
-      received_amount = @received_amount,
-      status = @status,
-      notes = @notes,
-      updated_at = datetime('now')
-    WHERE id = @id
-  `).run({ ...merged, id });
-
-  return getPayment(id);
+  const { rows } = await sql.query<PaymentRecord>(
+    `UPDATE payments SET
+      date = $1, customer_name = $2, staff_name = $3, contract_amount = $4,
+      confirmed_date = $5, received_amount = $6, status = $7, notes = $8, updated_at = NOW()
+     WHERE id = $9
+     RETURNING *`,
+    [
+      merged.date,
+      merged.customer_name,
+      merged.staff_name,
+      merged.contract_amount,
+      merged.confirmed_date,
+      merged.received_amount,
+      merged.status,
+      merged.notes,
+      id,
+    ],
+  );
+  return withDerived(rows[0]);
 }
 
-export function deletePayment(id: number): boolean {
-  const result = db.prepare('DELETE FROM payments WHERE id = ?').run(id);
-  return result.changes > 0;
+export async function deletePayment(id: number): Promise<boolean> {
+  const { rowCount } = await sql.query('DELETE FROM payments WHERE id = $1', [id]);
+  return (rowCount ?? 0) > 0;
 }
 
 /**
@@ -108,21 +116,27 @@ export function deletePayment(id: number): boolean {
  * 着金確認日があればその月、なければ入力日の月に計上し、
  * 未着金分は total_received に含めない(0円扱い)。
  */
-export function monthlySummary(): MonthlySummaryRow[] {
-  const rows = db
-    .prepare(
-      `
-      SELECT
-        strftime('%Y-%m', COALESCE(confirmed_date, date)) AS month,
-        SUM(COALESCE(received_amount, 0)) AS total_received,
-        SUM(contract_amount) AS total_contract,
-        COUNT(*) AS count
-      FROM payments
-      GROUP BY month
-      ORDER BY month DESC
-    `,
-    )
-    .all() as MonthlySummaryRow[];
+export async function monthlySummary(): Promise<MonthlySummaryRow[]> {
+  const { rows } = await sql.query<{
+    month: string;
+    total_received: string; // SUM/COUNT はPostgresではnumeric/bigint(文字列)で返る
+    total_contract: string;
+    count: string;
+  }>(`
+    SELECT
+      SUBSTRING(COALESCE(confirmed_date, date), 1, 7) AS month,
+      SUM(COALESCE(received_amount, 0)) AS total_received,
+      SUM(contract_amount) AS total_contract,
+      COUNT(*) AS count
+    FROM payments
+    GROUP BY month
+    ORDER BY month DESC
+  `);
 
-  return rows;
+  return rows.map((r) => ({
+    month: r.month,
+    total_received: Number(r.total_received),
+    total_contract: Number(r.total_contract),
+    count: Number(r.count),
+  }));
 }

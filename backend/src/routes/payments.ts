@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as PaymentsService from '../services/payments.js';
 import type { PaymentInput, PaymentStatus } from '../types/payment.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const STATUSES: PaymentStatus[] = ['未確認', '確認済み', '要対応'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -69,61 +70,79 @@ function parsePaymentInput(
 
 export const paymentsRouter = Router();
 
-paymentsRouter.get('/', (req, res) => {
-  const { status, month } = req.query;
-  const payments = PaymentsService.listPayments({
-    status: typeof status === 'string' ? status : undefined,
-    month: typeof month === 'string' ? month : undefined,
-  });
-  res.json(payments);
-});
+paymentsRouter.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { status, month } = req.query;
+    const payments = await PaymentsService.listPayments({
+      status: typeof status === 'string' ? status : undefined,
+      month: typeof month === 'string' ? month : undefined,
+    });
+    res.json(payments);
+  }),
+);
 
 // ":id" より先に定義しないと "/summary/monthly" が :id にマッチしてしまう
-paymentsRouter.get('/summary/monthly', (_req, res) => {
-  res.json(PaymentsService.monthlySummary());
-});
+paymentsRouter.get(
+  '/summary/monthly',
+  asyncHandler(async (_req, res) => {
+    res.json(await PaymentsService.monthlySummary());
+  }),
+);
 
-paymentsRouter.get('/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const payment = PaymentsService.getPayment(id);
-  if (!payment) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.json(payment);
-});
+paymentsRouter.get(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const payment = await PaymentsService.getPayment(id);
+    if (!payment) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.json(payment);
+  }),
+);
 
-paymentsRouter.post('/', (req, res) => {
-  const { data, error } = parsePaymentInput(req.body, { partial: false });
-  if (error || !data) {
-    res.status(400).json({ error });
-    return;
-  }
-  const created = PaymentsService.createPayment(data as PaymentInput);
-  res.status(201).json(created);
-});
+paymentsRouter.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { data, error } = parsePaymentInput(req.body, { partial: false });
+    if (error || !data) {
+      res.status(400).json({ error });
+      return;
+    }
+    const created = await PaymentsService.createPayment(data as PaymentInput);
+    res.status(201).json(created);
+  }),
+);
 
-paymentsRouter.put('/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const { data, error } = parsePaymentInput(req.body, { partial: true });
-  if (error || !data) {
-    res.status(400).json({ error });
-    return;
-  }
-  const updated = PaymentsService.updatePayment(id, data);
-  if (!updated) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.json(updated);
-});
+paymentsRouter.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const { data, error } = parsePaymentInput(req.body, { partial: true });
+    if (error || !data) {
+      res.status(400).json({ error });
+      return;
+    }
+    const updated = await PaymentsService.updatePayment(id, data);
+    if (!updated) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.json(updated);
+  }),
+);
 
-paymentsRouter.delete('/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const success = PaymentsService.deletePayment(id);
-  if (!success) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.status(204).send();
-});
+paymentsRouter.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const success = await PaymentsService.deletePayment(id);
+    if (!success) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.status(204).send();
+  }),
+);

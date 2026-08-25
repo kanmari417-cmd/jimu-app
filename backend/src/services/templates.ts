@@ -1,49 +1,49 @@
-import { db } from '../db/database.js';
+import { sql } from '../db/postgres.js';
 import type { TemplateInput, TemplateRecord } from '../types/template.js';
 
-export function listTemplates(category?: string): TemplateRecord[] {
+export async function listTemplates(category?: string): Promise<TemplateRecord[]> {
   if (category) {
-    return db
-      .prepare('SELECT * FROM message_templates WHERE category = ? ORDER BY updated_at DESC, id DESC')
-      .all(category) as TemplateRecord[];
+    const { rows } = await sql.query<TemplateRecord>(
+      'SELECT * FROM message_templates WHERE category = $1 ORDER BY updated_at DESC, id DESC',
+      [category],
+    );
+    return rows;
   }
-  return db
-    .prepare('SELECT * FROM message_templates ORDER BY updated_at DESC, id DESC')
-    .all() as TemplateRecord[];
+  const { rows } = await sql.query<TemplateRecord>('SELECT * FROM message_templates ORDER BY updated_at DESC, id DESC');
+  return rows;
 }
 
-export function getTemplate(id: number): TemplateRecord | undefined {
-  return db.prepare('SELECT * FROM message_templates WHERE id = ?').get(id) as TemplateRecord | undefined;
+export async function getTemplate(id: number): Promise<TemplateRecord | undefined> {
+  const { rows } = await sql.query<TemplateRecord>('SELECT * FROM message_templates WHERE id = $1', [id]);
+  return rows[0];
 }
 
-export function createTemplate(input: TemplateInput): TemplateRecord {
-  const stmt = db.prepare(`
-    INSERT INTO message_templates (category, title, body, updated_at)
-    VALUES (@category, @title, @body, datetime('now'))
-  `);
-  const result = stmt.run(input);
-  return getTemplate(Number(result.lastInsertRowid))!;
+export async function createTemplate(input: TemplateInput): Promise<TemplateRecord> {
+  const { rows } = await sql.query<TemplateRecord>(
+    `INSERT INTO message_templates (category, title, body, updated_at)
+     VALUES ($1, $2, $3, NOW())
+     RETURNING *`,
+    [input.category, input.title, input.body],
+  );
+  return rows[0];
 }
 
-export function updateTemplate(id: number, input: Partial<TemplateInput>): TemplateRecord | undefined {
-  const existing = getTemplate(id);
+export async function updateTemplate(id: number, input: Partial<TemplateInput>): Promise<TemplateRecord | undefined> {
+  const existing = await getTemplate(id);
   if (!existing) return undefined;
 
   const merged: TemplateRecord = { ...existing, ...input };
 
-  db.prepare(`
-    UPDATE message_templates SET
-      category = @category,
-      title = @title,
-      body = @body,
-      updated_at = datetime('now')
-    WHERE id = @id
-  `).run({ ...merged, id });
-
-  return getTemplate(id);
+  const { rows } = await sql.query<TemplateRecord>(
+    `UPDATE message_templates SET category = $1, title = $2, body = $3, updated_at = NOW()
+     WHERE id = $4
+     RETURNING *`,
+    [merged.category, merged.title, merged.body, id],
+  );
+  return rows[0];
 }
 
-export function deleteTemplate(id: number): boolean {
-  const result = db.prepare('DELETE FROM message_templates WHERE id = ?').run(id);
-  return result.changes > 0;
+export async function deleteTemplate(id: number): Promise<boolean> {
+  const { rowCount } = await sql.query('DELETE FROM message_templates WHERE id = $1', [id]);
+  return (rowCount ?? 0) > 0;
 }

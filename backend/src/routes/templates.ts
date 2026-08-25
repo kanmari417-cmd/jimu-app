@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as TemplatesService from '../services/templates.js';
 import type { TemplateCategory, TemplateInput } from '../types/template.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const CATEGORIES: TemplateCategory[] = ['採用事務', 'Slack投稿', '顧客対応'];
 
@@ -38,50 +39,65 @@ function parseTemplateInput(
 
 export const templatesRouter = Router();
 
-templatesRouter.get('/', (req, res) => {
-  const { category } = req.query;
-  res.json(TemplatesService.listTemplates(typeof category === 'string' ? category : undefined));
-});
+templatesRouter.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { category } = req.query;
+    res.json(await TemplatesService.listTemplates(typeof category === 'string' ? category : undefined));
+  }),
+);
 
-templatesRouter.get('/:id', (req, res) => {
-  const template = TemplatesService.getTemplate(Number(req.params.id));
-  if (!template) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.json(template);
-});
+templatesRouter.get(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const template = await TemplatesService.getTemplate(Number(req.params.id));
+    if (!template) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.json(template);
+  }),
+);
 
-templatesRouter.post('/', (req, res) => {
-  const { data, error } = parseTemplateInput(req.body, { partial: false });
-  if (error || !data) {
-    res.status(400).json({ error });
-    return;
-  }
-  const created = TemplatesService.createTemplate(data as TemplateInput);
-  res.status(201).json(created);
-});
+templatesRouter.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { data, error } = parseTemplateInput(req.body, { partial: false });
+    if (error || !data) {
+      res.status(400).json({ error });
+      return;
+    }
+    const created = await TemplatesService.createTemplate(data as TemplateInput);
+    res.status(201).json(created);
+  }),
+);
 
-templatesRouter.put('/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const { data, error } = parseTemplateInput(req.body, { partial: true });
-  if (error || !data) {
-    res.status(400).json({ error });
-    return;
-  }
-  const updated = TemplatesService.updateTemplate(id, data);
-  if (!updated) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.json(updated);
-});
+templatesRouter.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const { data, error } = parseTemplateInput(req.body, { partial: true });
+    if (error || !data) {
+      res.status(400).json({ error });
+      return;
+    }
+    const updated = await TemplatesService.updateTemplate(id, data);
+    if (!updated) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.json(updated);
+  }),
+);
 
-templatesRouter.delete('/:id', (req, res) => {
-  const success = TemplatesService.deleteTemplate(Number(req.params.id));
-  if (!success) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.status(204).send();
-});
+templatesRouter.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const success = await TemplatesService.deleteTemplate(Number(req.params.id));
+    if (!success) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.status(204).send();
+  }),
+);

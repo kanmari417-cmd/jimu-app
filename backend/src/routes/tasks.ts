@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as TasksService from '../services/tasks.js';
 import type { TaskInput, TaskStatus } from '../types/task.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const STATUSES: TaskStatus[] = ['提出待ち', '確認中', '完了'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -51,49 +52,64 @@ function parseTaskInput(
 
 export const tasksRouter = Router();
 
-tasksRouter.get('/', (_req, res) => {
-  res.json(TasksService.listTasks());
-});
+tasksRouter.get(
+  '/',
+  asyncHandler(async (_req, res) => {
+    res.json(await TasksService.listTasks());
+  }),
+);
 
-tasksRouter.get('/:id', (req, res) => {
-  const task = TasksService.getTask(Number(req.params.id));
-  if (!task) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.json(task);
-});
+tasksRouter.get(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const task = await TasksService.getTask(Number(req.params.id));
+    if (!task) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.json(task);
+  }),
+);
 
-tasksRouter.post('/', (req, res) => {
-  const { data, error } = parseTaskInput(req.body, { partial: false });
-  if (error || !data) {
-    res.status(400).json({ error });
-    return;
-  }
-  const created = TasksService.createTask(data as TaskInput);
-  res.status(201).json(created);
-});
+tasksRouter.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { data, error } = parseTaskInput(req.body, { partial: false });
+    if (error || !data) {
+      res.status(400).json({ error });
+      return;
+    }
+    const created = await TasksService.createTask(data as TaskInput);
+    res.status(201).json(created);
+  }),
+);
 
-tasksRouter.put('/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const { data, error } = parseTaskInput(req.body, { partial: true });
-  if (error || !data) {
-    res.status(400).json({ error });
-    return;
-  }
-  const updated = TasksService.updateTask(id, data);
-  if (!updated) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.json(updated);
-});
+tasksRouter.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const { data, error } = parseTaskInput(req.body, { partial: true });
+    if (error || !data) {
+      res.status(400).json({ error });
+      return;
+    }
+    const updated = await TasksService.updateTask(id, data);
+    if (!updated) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.json(updated);
+  }),
+);
 
-tasksRouter.delete('/:id', (req, res) => {
-  const success = TasksService.deleteTask(Number(req.params.id));
-  if (!success) {
-    res.status(404).json({ error: 'Not Found' });
-    return;
-  }
-  res.status(204).send();
-});
+tasksRouter.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const success = await TasksService.deleteTask(Number(req.params.id));
+    if (!success) {
+      res.status(404).json({ error: 'Not Found' });
+      return;
+    }
+    res.status(204).send();
+  }),
+);

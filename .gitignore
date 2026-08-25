@@ -5,12 +5,8 @@ build/
 *.local
 *.tsbuildinfo
 
-# SQLite data
-backend/data/*.sqlite
-backend/data/*.sqlite-journal
-backend/data/*.sqlite-wal
-backend/data/*.sqlite-shm
-backend/data/*.db
+# Vercel CLI
+.vercel/
 
 # Logs
 npm-debug.log*
