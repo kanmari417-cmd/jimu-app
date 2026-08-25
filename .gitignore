@@ -8,6 +8,8 @@ build/
 # SQLite data
 backend/data/*.sqlite
 backend/data/*.sqlite-journal
+backend/data/*.sqlite-wal
+backend/data/*.sqlite-shm
 backend/data/*.db
 
 # Logs
