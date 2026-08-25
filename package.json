@@ -1,0 +1,17 @@
+{
+  "name": "jimu-app",
+  "private": true,
+  "version": "0.1.0",
+  "description": "営業事務向け業務管理システム(着金入力管理 / 未提出チェック管理ボード / 定型メッセージ管理 / 空き時間提案)",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build:backend": "npm run build --workspace backend",
+    "build:frontend": "npm run build --workspace frontend",
+    "build": "npm run build:backend && npm run build:frontend"
+  }
+}
