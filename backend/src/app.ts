@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { db } from './db/database.js';
+import { paymentsRouter } from './routes/payments.js';
 
 export function createApp() {
   const app = express();
@@ -14,8 +15,9 @@ export function createApp() {
     res.json({ status: 'ok', db: row ?? null, timestamp: new Date().toISOString() });
   });
 
-  // 各機能のルーターはここに追加していく
-  // app.use('/api/payments', paymentsRouter);
+  app.use('/api/payments', paymentsRouter);
+
+  // 残りの機能のルーターはここに追加していく
   // app.use('/api/tasks', tasksRouter);
   // app.use('/api/templates', templatesRouter);
   // app.use('/api/availability', availabilityRouter);
