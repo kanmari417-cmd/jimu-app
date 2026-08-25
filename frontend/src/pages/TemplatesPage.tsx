@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
+import Banner from '../components/common/Banner';
+import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
+import PageHeader from '../components/common/PageHeader';
 import TemplateCard from '../components/templates/TemplateCard';
 import TemplateForm from '../components/templates/TemplateForm';
 import { useTemplates } from '../hooks/useTemplates';
@@ -44,19 +47,16 @@ export default function TemplatesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold">③ 定型メッセージ管理</h2>
+      <PageHeader title="③ 定型メッセージ管理">
         <button
           onClick={openCreateForm}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           + 新規登録
         </button>
-      </div>
+      </PageHeader>
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <div className="flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
@@ -75,9 +75,7 @@ export default function TemplatesPage() {
       {loading ? (
         <p className="text-sm text-gray-500">読み込み中…</p>
       ) : filteredTemplates.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-500">
-          該当するテンプレートがありません。
-        </div>
+        <EmptyState>該当するテンプレートがありません。</EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTemplates.map((t) => (

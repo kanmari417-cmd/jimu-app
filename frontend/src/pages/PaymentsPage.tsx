@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import ApiStatus from '../components/common/ApiStatus';
+import Banner from '../components/common/Banner';
 import Modal from '../components/common/Modal';
+import PageHeader from '../components/common/PageHeader';
 import MonthlySummaryPanel from '../components/payments/MonthlySummaryPanel';
 import PaymentForm from '../components/payments/PaymentForm';
 import PaymentTable from '../components/payments/PaymentTable';
@@ -48,29 +49,23 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold">① 着金入力管理</h2>
-        <div className="flex items-center gap-2">
-          <ApiStatus />
-          <button
-            onClick={openCreateForm}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + 新規登録
-          </button>
-        </div>
-      </div>
+      <PageHeader title="① 着金入力管理">
+        <button
+          onClick={openCreateForm}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          + 新規登録
+        </button>
+      </PageHeader>
 
       {overduePayments.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <Banner>
           ⚠️ 未確認のまま3日以上経過しているデータが {overduePayments.length} 件あります(
           {overduePayments.map((p) => p.customer_name).join('、')})
-        </div>
+        </Banner>
       )}
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <MonthlySummaryPanel summary={summary} />
 

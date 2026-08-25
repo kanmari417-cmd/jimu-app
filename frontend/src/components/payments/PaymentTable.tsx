@@ -1,3 +1,4 @@
+import EmptyState from '../common/EmptyState';
 import type { Payment } from '../../types/payment';
 
 const STATUS_STYLE: Record<Payment['status'], string> = {
@@ -22,11 +23,7 @@ type Props = {
 
 export default function PaymentTable({ payments, onEdit, onDelete }: Props) {
   if (payments.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-500">
-        該当する着金データがありません。
-      </div>
-    );
+    return <EmptyState>該当する着金データがありません。</EmptyState>;
   }
 
   return (

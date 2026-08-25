@@ -1,5 +1,7 @@
 import { useMemo, useState, type DragEvent } from 'react';
+import Banner from '../components/common/Banner';
 import Modal from '../components/common/Modal';
+import PageHeader from '../components/common/PageHeader';
 import KanbanColumn from '../components/tasks/KanbanColumn';
 import TaskForm from '../components/tasks/TaskForm';
 import { useTasks } from '../hooks/useTasks';
@@ -57,26 +59,23 @@ export default function TasksBoardPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold">② 未提出チェック管理ボード</h2>
+      <PageHeader title="② 未提出チェック管理ボード">
         <button
           onClick={openCreateForm}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           + 新規登録
         </button>
-      </div>
+      </PageHeader>
 
       {overdueTasks.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <Banner>
           ⚠️ 期限を超過しているタスクが {overdueTasks.length} 件あります(
           {overdueTasks.map((t) => t.target_name).join('、')})
-        </div>
+        </Banner>
       )}
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <p className="text-xs text-gray-400">
         カードをドラッグ&ドロップで列間移動できます(スマホでは「編集」からステータスを変更してください)。

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { apiPost } from '../api/client';
 import AvailabilityTimeline from '../components/availability/AvailabilityTimeline';
 import MemberInputCard from '../components/availability/MemberInputCard';
+import Banner from '../components/common/Banner';
+import PageHeader from '../components/common/PageHeader';
 import type { ComputeAvailabilityInput, ComputeAvailabilityResult, MemberAvailabilityInput } from '../types/availability';
 
 function defaultMembers(): MemberAvailabilityInput[] {
@@ -50,7 +52,7 @@ export default function AvailabilityPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">④ 空き時間提案</h2>
+      <PageHeader title="④ 空き時間提案" />
 
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <div className="mb-4 flex flex-wrap items-end gap-4">
@@ -104,7 +106,11 @@ export default function AvailabilityPage() {
           </div>
         )}
 
-        {error && <p className="mt-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && (
+          <div className="mt-3">
+            <Banner tone="error">{error}</Banner>
+          </div>
+        )}
 
         <button
           type="button"
