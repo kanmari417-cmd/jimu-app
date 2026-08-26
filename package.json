@@ -2,6 +2,7 @@
   "name": "jimu-app",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "description": "営業事務向け業務管理システム(着金入力管理 / 未提出チェック管理ボード / 定型メッセージ管理 / 空き時間提案)",
   "workspaces": [
     "backend",
