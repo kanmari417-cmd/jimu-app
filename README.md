@@ -98,4 +98,5 @@ curl http://localhost:4000/api/health
 - [x] ④ 空き時間提案
 - [x] 全体UI調整(共通ヘッダー/バナー/空状態コンポーネントへの統一、モバイル用ボトムナビゲーション追加)
 - [x] PostgreSQL(Neon)への移行・Vercelデプロイ用構成
-- [ ] Vercel本番デプロイ(Vercelトークン共有後に実施)
+- [x] Vercelプロジェクトの作成・Neonデータベースの接続
+- [ ] 本番URLでの動作確認
