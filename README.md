@@ -6,12 +6,14 @@
 2. **未提出チェック管理ボード** — カンバン形式のステータス管理、期限超過ハイライト
 3. **定型メッセージ管理** — カテゴリ別テンプレート登録・ワンクリックコピー
 4. **空き時間提案** — 複数人の予定から全員が空いている時間帯を自動計算
+5. **経費精算** — 領収書(手書き含む)の写真をAIが自動読み取りし、日付・支払先・金額・カテゴリを自動入力。月別に集計
 
 ## 技術構成
 
 - フロントエンド: React + TypeScript + Vite + Tailwind CSS
 - バックエンド: Node.js + Express + TypeScript
 - データベース: PostgreSQL([Neon](https://neon.com/) — Vercel Marketplace経由で接続、`@neondatabase/serverless` 使用)
+- AI(領収書自動読み取り): [Claude API](https://claude.com/platform/api)(`@anthropic-ai/sdk`、モデル: `claude-opus-5-5`)
 - デプロイ: Vercel(フロントエンドは静的ホスティング、バックエンドは `api/index.ts` のサーバーレス関数として同一プロジェクトにデプロイ)
 - データはユーザー単位ではなくチーム全体で1つのDBを共有
 
@@ -46,6 +48,16 @@ npm install
 3. ローカル開発でこの値を使う場合は `vercel env pull backend/.env` で取得するか、`backend/.env.example` を参考に `backend/.env` を手動作成してください
 
 テーブルは初回リクエスト時に自動作成されます(`CREATE TABLE IF NOT EXISTS` のため、事前のマイグレーション作業は不要です)。
+
+## 領収書の自動読み取り(Claude API)の準備
+
+「⑤経費精算」で領収書の写真を添付すると、Claude APIの画像認識で日付・支払先・金額・カテゴリを自動で読み取ります(印刷・手書きどちらの領収書にも対応)。
+
+1. [console.anthropic.com](https://console.anthropic.com/) でAPIキーを発行
+2. Vercelプロジェクトの環境変数に `ANTHROPIC_API_KEY` を追加(Production/Preview/Development すべてにチェック)
+3. ローカル開発では `backend/.env` に同様に追加
+
+未設定の場合、自動読み取りはエラーメッセージを表示して失敗しますが、**写真の添付自体や他の項目の手動入力・保存は問題なく行えます**(自動読み取りは補助機能で、無くても経費精算機能自体は使えます)。
 
 ## 開発サーバーの起動
 
@@ -96,6 +108,7 @@ curl http://localhost:4000/api/health
 - [x] ② 未提出チェック管理ボード
 - [x] ③ 定型メッセージ管理
 - [x] ④ 空き時間提案
+- [x] ⑤ 経費精算(領収書のAI自動読み取り)
 - [x] 全体UI調整(共通ヘッダー/バナー/空状態コンポーネントへの統一、モバイル用ボトムナビゲーション追加)
 - [x] PostgreSQL(Neon)への移行・Vercelデプロイ用構成
 - [x] Vercelプロジェクトの作成・Neonデータベースの接続

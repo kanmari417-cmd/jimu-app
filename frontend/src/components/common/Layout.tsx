@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import ApiStatus from './ApiStatus';
-import { CashIcon, ChatIcon, ClipboardCheckIcon, ClockIcon } from './icons';
+import { CashIcon, ChatIcon, ClipboardCheckIcon, ClockIcon, ReceiptIcon } from './icons';
 
 const NAV_ITEMS = [
   { to: '/payments', label: '着金入力管理', shortLabel: '着金', icon: CashIcon },
   { to: '/tasks', label: '未提出チェック', shortLabel: '未提出', icon: ClipboardCheckIcon },
   { to: '/templates', label: '定型メッセージ', shortLabel: 'メッセージ', icon: ChatIcon },
   { to: '/availability', label: '空き時間提案', shortLabel: '空き時間', icon: ClockIcon },
+  { to: '/expenses', label: '経費精算', shortLabel: '経費', icon: ReceiptIcon },
 ] as const;
 
 function topNavLinkClass({ isActive }: { isActive: boolean }) {

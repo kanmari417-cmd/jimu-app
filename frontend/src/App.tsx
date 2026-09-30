@@ -5,6 +5,7 @@ import PaymentsPage from './pages/PaymentsPage';
 import TasksBoardPage from './pages/TasksBoardPage';
 import TemplatesPage from './pages/TemplatesPage';
 import AvailabilityPage from './pages/AvailabilityPage';
+import ExpensesPage from './pages/ExpensesPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/tasks" element={<TasksBoardPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />
+          <Route path="/expenses" element={<ExpensesPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

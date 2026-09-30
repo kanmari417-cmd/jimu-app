@@ -29,7 +29,7 @@ export const sql = {
     neonSql(text, params) as unknown as Promise<QueryResult<T>>,
 };
 
-// チーム全体で共有する3機能分のテーブル定義。
+// チーム全体で共有する4機能分のテーブル定義。
 // (空き時間提案は永続化不要のため対象外)
 const SCHEMA_STATEMENTS: string[] = [
   `CREATE TABLE IF NOT EXISTS payments (
@@ -63,11 +63,26 @@ const SCHEMA_STATEMENTS: string[] = [
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS expenses (
+    id              SERIAL PRIMARY KEY,
+    date            TEXT NOT NULL,
+    category        TEXT NOT NULL CHECK (category IN ('交通費', '接待交際費', '消耗品費', '会議費', 'その他')),
+    staff_name      TEXT NOT NULL,
+    vendor          TEXT NOT NULL,
+    amount          INTEGER NOT NULL,
+    receipt_image   TEXT,
+    notes           TEXT,
+    status          TEXT NOT NULL DEFAULT '下書き' CHECK (status IN ('下書き', '申請中', '承認済み', '却下')),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
   `CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)`,
   `CREATE INDEX IF NOT EXISTS idx_payments_date ON payments(date)`,
   `CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`,
   `CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date)`,
   `CREATE INDEX IF NOT EXISTS idx_templates_category ON message_templates(category)`,
+  `CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status)`,
+  `CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)`,
 ];
 
 let initPromise: Promise<void> | null = null;

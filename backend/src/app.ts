@@ -6,12 +6,14 @@ import { paymentsRouter } from './routes/payments.js';
 import { tasksRouter } from './routes/tasks.js';
 import { templatesRouter } from './routes/templates.js';
 import { availabilityRouter } from './routes/availability.js';
+import { expensesRouter } from './routes/expenses.js';
 
 export function createApp() {
   const app = express();
 
   app.use(cors());
-  app.use(express.json());
+  // 領収書画像(base64)を扱うためデフォルト(100kb)より上限を引き上げる
+  app.use(express.json({ limit: '8mb' }));
 
   // テーブル未作成なら作成する(初回のみ実行、以降はキャッシュされたPromiseを再利用)
   app.use((_req, res, next) => {
@@ -38,6 +40,7 @@ export function createApp() {
   app.use('/api/tasks', tasksRouter);
   app.use('/api/templates', templatesRouter);
   app.use('/api/availability', availabilityRouter);
+  app.use('/api/expenses', expensesRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not Found' });
